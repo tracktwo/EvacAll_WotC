@@ -22,7 +22,7 @@ static function X2AbilityTemplate EvacAllAbility()
 	local X2AbilityTemplate             Template;
 	local X2AbilityCost_ActionPoints    ActionPointCost;
 	local X2AbilityTrigger_PlayerInput  PlayerInput;
-	local X2Condition_UnitValue			UnitValue;	
+	local X2Condition_UnitValue         UnitValue;
 	local X2Condition_UnitProperty      UnitProperty;
 	local array<name>                   SkipExclusions;
 
@@ -54,8 +54,7 @@ static function X2AbilityTemplate EvacAllAbility()
 
 	Template.AbilityTargetStyle = default.SelfTarget;
 	PlayerInput = new class'X2AbilityTrigger_PlayerInput';
-	Template.AbilityTriggers.AddItem(PlayerInput);	
-
+	Template.AbilityTriggers.AddItem(PlayerInput);
 
 	// Only allow when evac is allowed.
 	UnitValue = new class'X2Condition_UnitValue';
@@ -73,7 +72,7 @@ static function X2AbilityTemplate EvacAllAbility()
 	Template.bDontDisplayInAbilitySummary = true;
 
 	//Template.AddAbilityEventListener('EvacAllActivated', EvacAllActivated, ELD_OnStateSubmitted);
-	
+
 	return Template;
 }
 
@@ -98,7 +97,7 @@ simulated function bool IsVIP(XComGameState_Unit UnitState)
 	}
 }
 
-simulated function XComGameState EvacAll_BuildGameState( XComGameStateContext Context )
+simulated function XComGameState EvacAll_BuildGameState(XComGameStateContext Context)
 {
 	local XComGameStateHistory History;
 	local XComGameState_Ability AbilityState;
@@ -117,7 +116,7 @@ simulated function XComGameState EvacAll_BuildGameState( XComGameStateContext Co
 
 	TriggerEvent = true;
 
-	NewGameState = History.CreateNewGameState(true, Context);	
+	NewGameState = History.CreateNewGameState(true, Context);
 
 	foreach History.IterateByClassType(class'XComGameState_Unit', GameStateUnit)
 	{
@@ -147,7 +146,7 @@ simulated function XComGameState EvacAll_BuildGameState( XComGameStateContext Co
 
 simulated function DoOneEvac(XComGameState NewGameState, XComGameState_Unit UnitState, XComGameState_Ability AbilityState, bool TriggerEvent)
 {
-	local XComGameState_Unit NewUnitState;	
+	local XComGameState_Unit NewUnitState;
 
 	NewUnitState = XComGameState_Unit(NewGameState.CreateStateObject(UnitState.Class, UnitState.ObjectID));
 	if (TriggerEvent)
@@ -163,8 +162,8 @@ simulated function DoOldEvacAll(XComGameStateContext Context)
 {
 	local XComGameStateHistory History;
 	local int i, j;
-    local X2TacticalGameRuleset TacticalRules;
-    local GameRulesCache_Unit UnitCache;
+	local X2TacticalGameRuleset TacticalRules;
+	local GameRulesCache_Unit UnitCache;
 	local XComGameState_Unit GameStateUnit;
 	local XComGameState_Ability AbilityState;
 	local StateObjectReference AbilityRef;
@@ -197,7 +196,7 @@ simulated function DoOldEvacAll(XComGameStateContext Context)
 					if( UnitCache.AvailableActions[i].AbilityObjectRef.ObjectID == AbilityRef.ObjectID )
 					{
 						for( j = 0; j < UnitCache.AvailableActions[i].AvailableTargets.Length; ++j )
-                        {
+						{
 							if( UnitCache.AvailableActions[i].AvailableTargets[j].PrimaryTarget == GameStateUnit.GetReference())
 							{
 								class'XComGameStateContext_Ability'.static.ActivateAbility(UnitCache.AvailableActions[i], j);
@@ -228,7 +227,7 @@ simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 
 	// Insta-vac if the user has requested no anims, and if we're doing
 	// old-style one-by-one this is handled by normal evac action sequence.
-	if (EvacMode == eNoAnimations || EvacMode == eOneByOne) 
+	if (EvacMode == eNoAnimations || EvacMode == eOneByOne)
 	{
 		EvacAll_BuildEmptyVisualization(VisualizeGameState);
 		return;
@@ -358,7 +357,7 @@ function EvacAll_BuildEmptyVisualization(XComGameState VisualizeGameState)
 	ActionMetadata.StateObject_OldState = History.GetGameStateForObjectID(InteractingUnitRef.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
 	ActionMetadata.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(InteractingUnitRef.ObjectID);
 	ActionMetadata.VisualizeActor = History.GetVisualizer(InteractingUnitRef.ObjectID);
-					
+
 	Ability = XComGameState_Ability(History.GetGameStateForObjectID(Context.InputContext.AbilityRef.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1));
 	SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
 	SoundAndFlyOver.SetSoundAndFlyOverParameters(None, Ability.GetMyTemplate().LocFlyOverText, '', eColor_Good);
