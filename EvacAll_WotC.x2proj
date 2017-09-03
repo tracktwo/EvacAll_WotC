@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Default" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Guid>fa9b04b1-c447-4ce3-b608-d6f7a7d0e648</Guid>
+    <Name>EvacAll_WotC</Name>
+    <Description>WotC version of Evac All</Description>
+    <SteamPublishID>0</SteamPublishID>
+    <AssemblyName>ExampleClassOverride</AssemblyName>
+    <RootNamespace>ExampleClassOverride</RootNamespace>
+    <ProjectGuid>{3f350978-33e7-493a-993b-92c1b54bf591}</ProjectGuid>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Config\XComEditor.ini" />
+    <Content Include="Config\XComEngine.ini" />
+    <Content Include="Config\XComEvacAll.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Content\UI_EvacAll.upk">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.chn">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.cht">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.deu">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.esn">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.fra">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.int">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.ita">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.jpn">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.kor">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.pol">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\XComGame.rus">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="ModPreview.jpg" />
+    <Content Include="ReadMe.txt" />
+    <Content Include="Src\EvacAll_WotC\Classes\UIScreenListener_TacticalHUD_EvacAll.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\EvacAll_WotC\Classes\X2Ability_EvacAll.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\EvacAll_WotC\Classes\X2Action_DelayedEvac.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\EvacAll_WotC\Classes\X2Action_NoEvacTiles.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\EvacAll_WotC\Classes\X2Actor_NoEvacTile.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\EvacAll_WotC\Classes\X2Actor_NoEvacTileGroup.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\EvacAll_WotC\Classes\X2DownloadableContentInfo_EvacAll.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\EvacAll_WotC\Classes\XComGameState_NoEvacTiles.uc">
+      <SubType>Content</SubType>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Config\" />
+    <Folder Include="Content\" />
+    <Folder Include="Localization\" />
+    <Folder Include="Src\" />
+    <Folder Include="Src\EvacAll_WotC" />
+    <Folder Include="Src\EvacAll_WotC\Classes" />
+  </ItemGroup>
+  <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
+</Project>
