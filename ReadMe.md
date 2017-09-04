@@ -46,12 +46,22 @@ the UI hint in this mod with this option.
 Thanks to the volunteers contributing translations for this mod:
 
 esurnir - French
+
 Jack Kwan - Traditional Chinese
+
 Albeoris - Russian
+
 Josemsar - Spanish
+
 Hamachi - Korean
+
 almasmario - Italian
+
 acosys, Marck - German
+
 Kubak1000 - Polish
+
 nobita - Japanese
+
 dick182 - Simplified Chinese
+
