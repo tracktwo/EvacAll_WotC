@@ -1,7 +1,8 @@
-class X2Ability_EvacAll extends X2Ability config (EvacAll);
+class X2Ability_EvacAll extends X2Ability;
 
-var config bool DisableEvacAnimation;
-var config array<Name> ImportantCharacterTemplates;
+`include(EvacAll_WotC/Src/ModConfigMenuAPI/MCM_API_CfgHelpers.uci)
+
+`MCM_CH_VersionChecker(class'EvacAll_WotC_Defaults'.default.Version, class'UIScreenListener_EvacAll_MCM'.default.Version)
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -81,7 +82,7 @@ function bool CanEvac(XComGameState_Unit Unit)
 	return AbilityState != none && AbilityState.CanActivateAbility(Unit) == 'AA_Success';
 }
 
-function bool IsCarryingImportantUnit(XComGameState_Unit Unit)
+function int CarryingImportantUnitId(XComGameState_Unit Unit)
 {
 	local XComGameState_Effect CarryEffect;
 	local XComGameState_Unit TestUnit;
@@ -94,14 +95,14 @@ function bool IsCarryingImportantUnit(XComGameState_Unit Unit)
 		CarryEffect = TestUnit.GetUnitAffectedByEffectState(class'X2AbilityTemplateManager'.default.BeingCarriedEffectName);
 		if (CarryEffect != None && CarryEffect.ApplyEffectParameters.SourceStateObjectRef.ObjectID == Unit.ObjectID)
 		{
-			if (ImportantCharacterTemplates.Find(TestUnit.GetMyTemplateName()) >= 0)
+			if (class'EvacAll_WotC_Internals'.default.ImportantCharacterTemplates.Find(TestUnit.GetMyTemplateName()) >= 0)
 			{
-				return true;
+				return CarryEffect.ApplyEffectParameters.TargetStateObjectRef.ObjectID;
 			}
 		}
 	}
 
-	return false;
+	return -1;
 }
 
 simulated function XComGameState EvacAll_BuildGameState(XComGameStateContext Context)
@@ -114,6 +115,7 @@ simulated function XComGameState EvacAll_BuildGameState(XComGameStateContext Con
 	local Object ThisObj;
 	local bool TriggerEvent;
 	local bool FoundCarryingUnit;
+	local int VIPId;
 
 	History = `XCOMHISTORY;
 
@@ -130,17 +132,25 @@ simulated function XComGameState EvacAll_BuildGameState(XComGameStateContext Con
 		if (!Unit.bRemovedFromPlay && CanEvac(Unit))
 		{
 			EligibleUnits.AddItem(Unit);
-
-			if (IsCarryingImportantUnit(Unit))
+			VIPId = CarryingImportantUnitId(Unit);
+			if (VIPId >= 0)
 			{
 				FoundCarryingUnit = true;
+				// Put the VIP unit first in the game state so that kismet will process this unit first.
+				// Ideally this is all we'd need to do, and the mission scripts would see the VIP extracting first
+				// in this state and mark the objective as complete. Unfortunately this isn't enough for neutralize
+				// target: it sees the VIP first and marks the objective as complete, but then when it hits the other
+				// units it thinks there is nobody left to evac it because it checks only the VIP unit's state and not
+				// the kismet variable that was set by the VIP being extracted. Until the script does that, we need to
+				// divide the evac into two distinct state submissions.
+				NewGameState.ModifyStateObject(class'XComGameState_Unit', VIPId);
 			}
 		}
 	}
 
 	// Pass 2 over eligible units: If we have anyone carrying a unit, evac them.
 	// Everyone else will wait for a second pass after this state is submitted so Kismet can process the
-	// VIP being removed while other soldiers are still on the ground or the mission objectives may incorrectly 
+	// VIP being removed while other soldiers are still on the ground or the mission objectives may incorrectly
 	// be reported as failed.
 	foreach EligibleUnits(Unit)
 	{
@@ -153,7 +163,7 @@ simulated function XComGameState EvacAll_BuildGameState(XComGameStateContext Con
 		}
 		else
 		{
-			if (IsCarryingImportantUnit(Unit))
+			if (CarryingImportantUnitId(Unit) >= 0)
 			{
 				if (TryToEvacUnit(Unit, TriggerEvent, NewGameState))
 				{
@@ -260,6 +270,21 @@ simulated function DoOneEvac(XComGameState NewGameState, XComGameState_Unit Unit
 	NewGameState.AddStateObject(NewUnitState);
 }
 
+function bool UnitInList(StateObjectReference UnitRef, array<XComGameState_Unit> UnitList)
+{
+	local XComGameState_Unit Unit;
+
+	foreach UnitList(Unit)
+	{
+		if (Unit.ObjectID == UnitRef.ObjectID)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 {
 	local XComGameStateHistory          History;
@@ -281,7 +306,7 @@ simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 	local StateObjectReference          UnitRef;
 
 	// Insta-vac if the user has requested no anims
-	if (DisableEvacAnimation)
+	if (`MCM_CH_GetValue(class'EvacAll_WotC_Defaults'.default.DisableEvacAnimation, class'UIScreenListener_EvacAll_MCM'.default.DisableEvacAnimation))
 	{
 		EvacAll_BuildEmptyVisualization(VisualizeGameState);
 		return;
@@ -301,7 +326,10 @@ simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 	{
 		foreach UnitList.UnitsToVisualize(UnitRef)
 		{
-			UnitsToProcess.AddItem(XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID)));
+			if (!UnitInList(UnitRef, UnitsToProcess))
+			{
+				UnitsToProcess.AddItem(XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID)));
+			}
 		}
 	}
 
@@ -439,3 +467,4 @@ function EvacAll_BuildEmptyVisualization(XComGameState VisualizeGameState)
 	SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
 	SoundAndFlyOver.SetSoundAndFlyOverParameters(None, Ability.GetMyTemplate().LocFlyOverText, '', eColor_Good);
 }
+

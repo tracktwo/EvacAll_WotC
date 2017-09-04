@@ -1,9 +1,10 @@
-class UIScreenListener_TacticalHUD_EvacAll extends UIScreenListener
-	config(EvacAll);
+class UIScreenListener_TacticalHUD_EvacAll extends UIScreenListener;
+
+`include(EvacAll_WotC/Src/ModConfigMenuAPI/MCM_API_CfgHelpers.uci)
 
 var array<X2Actor_NoEvacTile> mBlockedTiles;
 
-var const config bool ShowNoEvacTiles;
+`MCM_CH_VersionChecker(class'EvacAll_WotC_Defaults'.default.Version, class'UIScreenListener_EvacAll_MCM'.default.Version)
 
 // Handle event registration so we can paint overlays on inaccessible tiles. The evac all ability is no longer
 // handled here, this is now done purely through template modifications in the DLCInfo (which weren't available
@@ -13,7 +14,7 @@ event OnInit(UIScreen Screen)
 	local Object ThisObj;
 	local XComGameState_NoEvacTiles NoEvacTilesState;
 
-	if (ShowNoEvacTiles)
+	if (!`MCM_CH_GetValue(class'EvacAll_WotC_Defaults'.default.DisableNoEvacTiles, class'UIScreenListener_EvacAll_MCM'.default.DisableNoEvacTiles))
 	{
 		// Register an event handler for the 'EvacZonePlaced' event so we can update the tile data to show the
 		// inaccessible tiles.

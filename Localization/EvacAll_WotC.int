@@ -1,0 +1,7 @@
+[UIScreenListener_EvacAll_MCM]
+PageTitle="Evac All"
+GeneralSettingsTitle="General Settings"
+DisableEvacAnimationTitle="Disable Evac Animation"
+DisableEvacAnimationTooltip="Units will evac instantly with no rope-out animation."
+DisableNoEvacTilesTitle="Disable No-Evac Tile Overlay"
+DisableNoEvacTilesTooltip="Disables the tile overlay showing blocked tiles in the evac zone. Requires a reload to take effect."
