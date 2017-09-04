@@ -1,11 +1,11 @@
-﻿Evac All for XCOM2 War of the Chosen
+﻿# Evac All for XCOM2 War of the Chosen
 
-== Note ==
+## Note
 
 This mod is for the War of the Chosen expansion only. For XCOM2 and Long War 2,
 use the original Evac All mod.
 
-== Description ==
+## Description
 
 This mod adds an "Evac All" ability to soldier ability bars when they are
 in an active evac zone. Clicking this button will evac all soldiers 
@@ -20,12 +20,12 @@ until the next time you begin a mission after installing the mod. Loading
 a saved game in-mission from before the installation will work, but no
 Evac All ability will appear until the next mission.
 
-== Installation ==
+## Installation
 
 For manual installation, unzip the installation package into your XCOM2\XComGame\Mods folder 
 (create the Mods folder if it doesn't exist).
 
-== Configuration ==
+## Configuration
 
 This mod supports the Mod Config Menu mod for in-game configuration. If this mod is not
 installed, configuration options can be set in the XComEvacAll_WotC_Defaults.ini file in
@@ -41,7 +41,7 @@ overlays that are painted over tiles in the evac zone that are blocked. Soldiers
 blocked tiles cannot evac, but there is no UI to indicate this in vanilla. You can turn off
 the UI hint in this mod with this option.
 
-== Contributors ==
+## Contributors
 
 Thanks to the volunteers contributing translations for this mod:
 

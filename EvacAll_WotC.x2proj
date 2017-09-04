@@ -61,7 +61,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="ModPreview.jpg" />
-    <Content Include="ReadMe.txt" />
+    <Content Include="ReadMe.md">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\EvacAll_WotC\Classes\EvacAll_WotC_Defaults.uc">
       <SubType>Content</SubType>
     </Content>
