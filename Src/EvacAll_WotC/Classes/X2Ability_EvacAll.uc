@@ -1,13 +1,7 @@
 class X2Ability_EvacAll extends X2Ability config (EvacAll);
 
-enum EvacAllMode
-{
-	eOneByOne,
-	eAllAtOnce,
-	eNoAnimations
-};
-
-var config EvacAllMode EvacMode;
+var config bool DisableEvacAnimation;
+var config array<Name> ImportantCharacterTemplates;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -76,48 +70,138 @@ static function X2AbilityTemplate EvacAllAbility()
 	return Template;
 }
 
-simulated function bool IsVIP(XComGameState_Unit UnitState)
+function bool CanEvac(XComGameState_Unit Unit)
 {
-	local name UnitTemplateName;
+	local XComGameState_Ability AbilityState;
+	local StateObjectReference AbilityRef;
 
-	UnitTemplateName = UnitState.GetMyTemplateName();
-	switch(UnitTemplateName)
+	AbilityRef = Unit.FindAbility('Evac');
+	AbilityState = XComGameState_Ability(`XCOMHISTORY.GetGameStateForObjectID(AbilityRef.ObjectID));
+
+	return AbilityState != none && AbilityState.CanActivateAbility(Unit) == 'AA_Success';
+}
+
+function bool IsCarryingImportantUnit(XComGameState_Unit Unit)
+{
+	local XComGameState_Effect CarryEffect;
+	local XComGameState_Unit TestUnit;
+	local XComGameStateHistory History;
+
+	History = `XCOMHISTORY;
+
+	foreach History.IterateByClassType(class'XComGameState_Unit', TestUnit)
 	{
-	case 'Soldier_VIP':
-	case 'Scientist_VIP':
-	case 'Engineer_VIP':
-	case 'FriendlyVIPCivilian':
-	case 'HostileVIPCivilian':
-	case 'CommanderVIP':
-	case 'Engineer':
-	case 'Scientist':
-		return true;
-	default:
-		return false;
+		CarryEffect = TestUnit.GetUnitAffectedByEffectState(class'X2AbilityTemplateManager'.default.BeingCarriedEffectName);
+		if (CarryEffect != None && CarryEffect.ApplyEffectParameters.SourceStateObjectRef.ObjectID == Unit.ObjectID)
+		{
+			if (ImportantCharacterTemplates.Find(TestUnit.GetMyTemplateName()) >= 0)
+			{
+				return true;
+			}
+		}
 	}
+
+	return false;
 }
 
 simulated function XComGameState EvacAll_BuildGameState(XComGameStateContext Context)
 {
 	local XComGameStateHistory History;
-	local XComGameState_Ability AbilityState;
-	local StateObjectReference AbilityRef;
-	local XComGameState_Unit GameStateUnit;
+	local XComGameState_Unit Unit;
+	local array<XComGameState_Unit> EligibleUnits;
 	local XComGameState NewGameState;
+	local XComGameState_EvacAllUnitList UnitList;
+	local Object ThisObj;
 	local bool TriggerEvent;
-
-	if (EvacMode == eOneByOne)
-	{
-		DoOldEvacAll(Context);
-		return TypicalAbility_BuildGameState(Context);
-	}
+	local bool FoundCarryingUnit;
 
 	History = `XCOMHISTORY;
 
 	TriggerEvent = true;
+	ThisObj = self;
 
 	NewGameState = History.CreateNewGameState(true, Context);
 
+	// Pass 1: Iterate all units and figure out who is eligible to evac. Also check each unit
+	// to see if they're carrying someone. If so, we need to split the state into two pieces to
+	// work around the VIP bug.
+	foreach History.IterateByClassType(class'XComGameState_Unit', Unit)
+	{
+		if (!Unit.bRemovedFromPlay && CanEvac(Unit))
+		{
+			EligibleUnits.AddItem(Unit);
+
+			if (IsCarryingImportantUnit(Unit))
+			{
+				FoundCarryingUnit = true;
+			}
+		}
+	}
+
+	// Pass 2 over eligible units: If we have anyone carrying a unit, evac them.
+	// Everyone else will wait for a second pass after this state is submitted so Kismet can process the
+	// VIP being removed while other soldiers are still on the ground or the mission objectives may incorrectly 
+	// be reported as failed.
+	foreach EligibleUnits(Unit)
+	{
+		if (!FoundCarryingUnit)
+		{
+			if (TryToEvacUnit(Unit, TriggerEvent, NewGameState))
+			{
+				TriggerEvent = false;
+			}
+		}
+		else
+		{
+			if (IsCarryingImportantUnit(Unit))
+			{
+				if (TryToEvacUnit(Unit, TriggerEvent, NewGameState))
+				{
+					TriggerEvent = false;
+				}
+			}
+			else
+			{
+				// This unit will evac, but not in this state frame. Record them so they can be visualized with this
+				// frame, though.
+				if (UnitList == none)
+				{
+					UnitList = XComGameState_EvacAllUnitList(NewGameState.CreateNewStateObject(class'XComGameState_EvacAllUnitList'));
+				}
+
+				UnitList.UnitsToVisualize.AddItem(Unit.GetReference());
+			}
+		}
+	}
+
+	if (FoundCarryingUnit)
+	{
+		// At least one unit was found carrying another. Only the carrying units have been evacuated, so
+		// trigger an event to let us evac the rest of the squad after the fact.
+		`XEVENTMGR.RegisterForEvent(ThisObj, 'EvacAllCarryingUnitEvaced', OnCarryingUnitEvaced, ELD_OnStateSubmitted);
+		`XEVENTMGR.TriggerEvent('EvacAllCarryingUnitEvaced', Unit, Unit, NewGameState);
+	}
+
+	return NewGameState;
+}
+
+
+// Helper to finish up evacing other units after the ones carrying units have been processed.
+function EventListenerReturn OnCarryingUnitEvaced(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
+{
+	local XComGameState NewGameState;
+	local XComGameStateHistory History;
+	local XComGameState_Unit GameStateUnit;
+	local Object ThisObj;
+	local bool TriggerEvent;
+
+	TriggerEvent = true;
+
+	History = `XCOMHISTORY;
+	ThisObj = self;
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Evac All Cleanup");
+
+	// Go over all remaining units and try to evac anyone left.
 	foreach History.IterateByClassType(class'XComGameState_Unit', GameStateUnit)
 	{
 		if (GameStateUnit.bRemovedFromPlay)
@@ -125,23 +209,41 @@ simulated function XComGameState EvacAll_BuildGameState(XComGameStateContext Con
 			continue;
 		}
 
-		AbilityRef = GameStateUnit.FindAbility('Evac');
-		AbilityState = XComGameState_Ability(`XCOMHISTORY.GetGameStateForObjectID(AbilityRef.ObjectID));
-
-		// Unit doesn't have an ability state for evac: ignore em. E.g. we don't need to evac non-VIP civs
-		// or enemies.
-		if (AbilityState == none) {
-			continue;
-		}
-
-		if (AbilityState.CanActivateAbility(GameStateUnit) == 'AA_Success')
+		// Fire off another evac event for this game state as well to ensure the 'evac activated'
+		// kismet events are handled for this second group of evacuations.
+		if (TryToEvacUnit(GameStateUnit, TriggerEvent, NewGameState))
 		{
-			DoOneEvac(NewGameState, GameStateUnit, AbilityState, TriggerEvent);
 			TriggerEvent = false;
 		}
 	}
 
-	return NewGameState;
+	if (NewGameState.GetNumGameStateObjects() > 0)
+	{
+		`TACTICALRULES.SubmitGameState(NewGameState);
+	}
+	else
+	{
+		History.CleanupPendingGameState(NewGameState);
+	}
+
+	`XEVENTMGR.UnRegisterFromEvent(ThisObj, 'EvacAllCarryingUnitEvaced');
+	return ELR_NoInterrupt;
+}
+
+function bool TryToEvacUnit(XComGameState_Unit Unit, bool TriggerEvent, XComGameState NewGameState)
+{
+	local XComGameState_Ability AbilityState;
+	local StateObjectReference AbilityRef;
+
+	if (CanEvac(Unit))
+	{
+		AbilityRef = Unit.FindAbility('Evac');
+		AbilityState = XComGameState_Ability(`XCOMHISTORY.GetGameStateForObjectID(AbilityRef.ObjectID));
+		DoOneEvac(NewGameState, Unit, AbilityState, TriggerEvent);
+		return true;
+	}
+
+	return false;
 }
 
 simulated function DoOneEvac(XComGameState NewGameState, XComGameState_Unit UnitState, XComGameState_Ability AbilityState, bool TriggerEvent)
@@ -152,61 +254,10 @@ simulated function DoOneEvac(XComGameState NewGameState, XComGameState_Unit Unit
 	if (TriggerEvent)
 	{
 		`XEVENTMGR.TriggerEvent('EvacActivated', AbilityState, NewUnitState, NewGameState);
-
 	}
+
 	NewUnitState.EvacuateUnit(NewGameState);
 	NewGameState.AddStateObject(NewUnitState);
-}
-
-simulated function DoOldEvacAll(XComGameStateContext Context)
-{
-	local XComGameStateHistory History;
-	local int i, j;
-	local X2TacticalGameRuleset TacticalRules;
-	local GameRulesCache_Unit UnitCache;
-	local XComGameState_Unit GameStateUnit;
-	local XComGameState_Ability AbilityState;
-	local StateObjectReference AbilityRef;
-
-	History = `XCOMHISTORY;
-	TacticalRules = `TACTICALRULES;
-
-	foreach History.IterateByClassType(class'XComGameState_Unit', GameStateUnit)
-	{
-		if (GameStateUnit.bRemovedFromPlay)
-		{
-			continue;
-		}
-
-		AbilityRef = GameStateUnit.FindAbility('Evac');
-		AbilityState = XComGameState_Ability(`XCOMHISTORY.GetGameStateForObjectID(AbilityRef.ObjectID));
-
-		// Unit doesn't have an ability state for evac: ignore em. E.g. we don't need to evac non-VIP civs
-		// or enemies.
-		if (AbilityState == none) {
-			continue;
-		}
-
-		if (AbilityState.CanActivateAbility(GameStateUnit) == 'AA_Success')
-		{
-			if(TacticalRules.GetGameRulesCache_Unit(GameStateUnit.GetReference(), UnitCache))
-			{
-				for( i = 0; i < UnitCache.AvailableActions.Length; ++i)
-				{
-					if( UnitCache.AvailableActions[i].AbilityObjectRef.ObjectID == AbilityRef.ObjectID )
-					{
-						for( j = 0; j < UnitCache.AvailableActions[i].AvailableTargets.Length; ++j )
-						{
-							if( UnitCache.AvailableActions[i].AvailableTargets[j].PrimaryTarget == GameStateUnit.GetReference())
-							{
-								class'XComGameStateContext_Ability'.static.ActivateAbility(UnitCache.AvailableActions[i], j);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
@@ -215,6 +266,7 @@ simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 	local XComGameState_Unit            GameStateUnit;
 	local VisualizationActionMetadata	ActionMetadata;
 	local VisualizationActionMetadata	EmptyMetadata;
+	local VisualizationActionMetadata	CarriedMetadata;
 	local X2Action_PlaySoundAndFlyOver  SoundAndFlyover;
 	local name                          nUnitTemplateName;
 	local bool                          bIsVIP;
@@ -224,10 +276,12 @@ simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 	local XComGameState_Effect          CarryEffect;
 	local X2Action						LastAction;
 	local X2Action_MarkerNamed			MarkerAction;
+	local array<XComGameState_Unit>		UnitsToProcess;
+	local XComGameState_EvacAllUnitList UnitList;
+	local StateObjectReference          UnitRef;
 
-	// Insta-vac if the user has requested no anims, and if we're doing
-	// old-style one-by-one this is handled by normal evac action sequence.
-	if (EvacMode == eNoAnimations || EvacMode == eOneByOne)
+	// Insta-vac if the user has requested no anims
+	if (DisableEvacAnimation)
 	{
 		EvacAll_BuildEmptyVisualization(VisualizeGameState);
 		return;
@@ -235,12 +289,25 @@ simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 
 	History = `XCOMHISTORY;
 
-	//Decide on which VO cue to play, and which unit says it
+	// Add all units that actually evacuated in this frame to our list
 	foreach VisualizeGameState.IterateByClassType(class'XComGameState_Unit', GameStateUnit)
 	{
-		if (!GameStateUnit.bRemovedFromPlay)
-			continue;
+		UnitsToProcess.AddItem(GameStateUnit);
+	}
 
+	// Look for additional units that should be visualized as evacuating, but which are not yet
+	// done in this state.
+	foreach VisualizeGameState.IterateByClassType(class'XComGameState_EvacAllUnitList', UnitList)
+	{
+		foreach UnitList.UnitsToVisualize(UnitRef)
+		{
+			UnitsToProcess.AddItem(XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID)));
+		}
+	}
+
+	//Decide on which VO cue to play, and which unit says it
+	foreach UnitsToProcess(GameStateUnit)
+	{
 		nUnitTemplateName = GameStateUnit.GetMyTemplateName();
 		switch(nUnitTemplateName)
 		{
@@ -269,15 +336,15 @@ simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 		}
 	}
 
+	// Create a marker action to act as the parent of all evac visualizations so we can have them all processing
+	// in parallel rather than in sequence.
 	MarkerAction = X2Action_MarkerNamed(class'X2Action_MarkerNamed'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
 	MarkerAction.SetName("EvacAll");
 
-	//Build tracks for each evacuating unit
-	foreach VisualizeGameState.IterateByClassType(class'XComGameState_Unit', GameStateUnit)
+	//Build tracks for each evacuating unit. Note that not all of these units may have actually evac'd yet, but we are
+	// visualizing them evacing here. They'll be evac'd by the followup code that triggers after this state is completed.
+	foreach UnitsToProcess(GameStateUnit)
 	{
-		if (!GameStateUnit.bRemovedFromPlay)
-			continue;
-
 		LastAction = MarkerAction;
 
 		//Start their track
@@ -311,11 +378,21 @@ simulated function EvacAll_BuildVisualization(XComGameState VisualizeGameState)
 		if (CarryEffect == None)
 		{
 			class'X2Action_DelayedEvac'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, LastAction); //Not being carried - rope out
-			LastAction = ActionMetadata.LastActionAdded;
-		}
+			//Hide the pawn explicitly now - in case the vis block doesn't complete immediately to trigger an update
+			class'X2Action_RemoveUnit'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded);
 
-		//Hide the pawn explicitly now - in case the vis block doesn't complete immediately to trigger an updat
-		class'X2Action_RemoveUnit'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, LastAction);
+			// We're not being carried, but check if we're carrying someone else.
+			CarryEffect = XComGameState_Unit(ActionMetadata.StateObject_OldState).GetUnitAffectedByEffectState(class'X2Ability_CarryUnit'.default.CarryUnitEffectName);
+			if (CarryEffect != none)
+			{
+				// Hide the pawn being carried in this subtree.
+				CarriedMetadata = EmptyMetadata;
+				CarriedMetadata.StateObject_OldState = History.GetGameStateForObjectID(CarryEffect.ApplyEffectParameters.TargetStateObjectRef.ObjectID);
+				CarriedMetadata.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(CarryEffect.ApplyEffectParameters.TargetStateObjectRef.ObjectID);
+				CarriedMetadata.VisualizeActor = History.GetVisualizer(CarryEffect.ApplyEffectParameters.TargetStateObjectRef.ObjectID);
+				class'X2Action_RemoveUnit'.static.AddToVisualizationTree(CarriedMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded);
+			}
+		}
 	}
 
 	//If a VIP evacuated alone, we may need to pick an (arbitrary) other soldier on the squad to say the VO line about it.

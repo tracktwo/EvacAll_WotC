@@ -10,9 +10,6 @@
 
 class X2DownloadableContentInfo_EvacAll extends X2DownloadableContentInfo config(EvacAll);
 
-// Configurable list of character template names to give the EvacAll ability.
-var config array<Name> CharacterTemplates;
-
 /// <summary>
 /// This method is run if the player loads a saved game that was created prior to this DLC / Mod being installed, and allows the 
 /// DLC / Mod to perform custom processing in response. This will only be called once the first time a player loads a save that was
@@ -34,7 +31,6 @@ static event OnPostTemplatesCreated()
     local X2CharacterTemplate CharTemplate;
     local array<X2DataTemplate> DataTemplates;
     local X2DataTemplate Template, DiffTemplate;
-    local Name TemplateName;
 
     CharacterTemplateManager = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();
 
@@ -51,19 +47,5 @@ static event OnPostTemplatesCreated()
             }
         }
     }
-
-    // Also check the config list for additional templates (in case someone really wants to give them
-    // evac all without evac?
-    foreach default.CharacterTemplates(TemplateName)
-    {
-        CharacterTemplateManager.FindDataTemplateAllDifficulties(TemplateName, DataTemplates);
-        foreach DataTemplates(DiffTemplate)
-        {
-            CharTemplate = X2CharacterTemplate(DiffTemplate);
-            if (CharTemplate != none && CharTemplate.Abilities.Find('EvacAll') < 0)
-                CharTemplate.Abilities.AddItem('EvacAll');
-            else
-                `Log("Failed to locate character template " $ TemplateName);
-        }
-    }
 }
+
