@@ -2,8 +2,6 @@ class UIScreenListener_TacticalHUD_EvacAll extends UIScreenListener;
 
 `include(EvacAll_WotC/Src/ModConfigMenuAPI/MCM_API_CfgHelpers.uci)
 
-var array<X2Actor_NoEvacTile> mBlockedTiles;
-
 `MCM_CH_VersionChecker(class'EvacAll_WotC_Defaults'.default.Version, class'UIScreenListener_EvacAll_MCM'.default.Version)
 
 // Handle event registration so we can paint overlays on inaccessible tiles. The evac all ability is no longer

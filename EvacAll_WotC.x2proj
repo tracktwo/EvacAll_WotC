@@ -91,6 +91,9 @@
     <Content Include="Src\EvacAll_WotC\Classes\X2Actor_NoEvacTileGroup.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\EvacAll_WotC\Classes\X2Condition_AbilityGloballyEnabled.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\EvacAll_WotC\Classes\X2DownloadableContentInfo_EvacAll_WotC.uc">
       <SubType>Content</SubType>
     </Content>

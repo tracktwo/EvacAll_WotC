@@ -19,6 +19,7 @@ static function X2AbilityTemplate EvacAllAbility()
 	local X2AbilityTrigger_PlayerInput  PlayerInput;
 	local X2Condition_UnitValue         UnitValue;
 	local X2Condition_UnitProperty      UnitProperty;
+	local X2Condition_UnitCanUseAbility CanUseEvacCondition;
 	local array<name>                   SkipExclusions;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'EvacAll');
@@ -31,6 +32,9 @@ static function X2AbilityTemplate EvacAllAbility()
 	Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.PLACE_EVAC_PRIORITY;
 	Template.IconImage = "img:///UI_EvacAll.UIPerk_evac_all";
 	Template.AbilitySourceName = 'eAbilitySource_Commander';
+
+	// Note: Evac has bAllowedByDefault = false, but we need to set = true as the map scripts
+	// will enable only evac, not evac all. See the additional condition below.
 	Template.bAllowedByDefault = true;
 
 	// Allow anyone to evac.
@@ -56,6 +60,11 @@ static function X2AbilityTemplate EvacAllAbility()
 	UnitValue.AddCheckValue(class'X2Ability_DefaultAbilitySet'.default.EvacThisTurnName, class'X2Ability_DefaultAbilitySet'.default.MAX_EVAC_PER_TURN, eCheck_LessThan);
 	Template.AbilityShooterConditions.AddItem(UnitValue);
 	Template.AbilityShooterConditions.AddItem(new class'X2Condition_UnitInEvacZone');
+
+	// Make sure the evac ability is enabled
+	CanUseEvacCondition = new class'X2Condition_AbilityGloballyEnabled';
+	CanUseEvacCondition.AbilityName = 'Evac';
+	Template.AbilityShooterConditions.AddItem(CanUseEvacCondition);
 
 	ActionPointCost = new class'X2AbilityCost_ActionPoints';
 	ActionPointCost.iNumPoints = 0;
