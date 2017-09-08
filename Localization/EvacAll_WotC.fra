@@ -1,0 +1,8 @@
+[UIScreenListener_EvacAll_MCM]
+PageTitle="Évacuation Totale"
+GeneralSettingsTitle="Réglages généraux"
+DisableEvacAnimationTitle="Désactiver l'animation d'évacuation"
+DisableEvacAnimationTooltip="Les unités évacueront instantanément sans animation (corde)."
+DisableNoEvacTilesTitle="Désactiver l'affichage des cases valides"
+DisableNoEvacTilesTooltip="Désactive l'indication des cases ne permettant pas l'évacuation situées dans la zone d'évacuation. Nécessite un rechargement pour prendre effet."
+

@@ -24,7 +24,16 @@
     <Content Include="Content\UI_EvacAll.upk">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Localization\EvacAll_WotC.esn">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\EvacAll_WotC.fra">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Localization\EvacAll_WotC.int">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\EvacAll_WotC.jpn">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Localization\XComGame.chn">

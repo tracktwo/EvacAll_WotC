@@ -1,0 +1,8 @@
+[UIScreenListener_EvacAll_MCM]
+PageTitle="Evacuar a todos"
+GeneralSettingsTitle="Configuración General"
+DisableEvacAnimationTitle="Deshabilitar Animación de Evacuación"
+DisableEvacAnimationTooltip="Las Unidades Evacuarán al Instante sin Animación de Soga."
+DisableNoEvacTilesTitle="Deshabilitar Superposición de Casillas (Sin Evacuación)."
+DisableNoEvacTilesTooltip="Deshabilita la Superposición de Casillas, Mostrando Casillas Bloqueadas en Zona de Evacuación. (Requiere Reiniciar Aplicación para Tener Efecto)"
+

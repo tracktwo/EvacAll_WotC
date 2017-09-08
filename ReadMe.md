@@ -45,13 +45,13 @@ the UI hint in this mod with this option.
 
 Thanks to the volunteers contributing translations for this mod:
 
-esurnir - French
+esurnir, Lord Yanaek - French
 
 Jack Kwan - Traditional Chinese
 
 Albeoris - Russian
 
-Josemsar - Spanish
+Josemsar, jazzlutty - Spanish
 
 Hamachi - Korean
 
