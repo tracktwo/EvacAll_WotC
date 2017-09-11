@@ -19,7 +19,7 @@ static function X2AbilityTemplate EvacAllAbility()
 	local X2AbilityTrigger_PlayerInput  PlayerInput;
 	local X2Condition_UnitValue         UnitValue;
 	local X2Condition_UnitProperty      UnitProperty;
-	local X2Condition_UnitCanUseAbility CanUseEvacCondition;
+	local X2Condition_AbilityGloballyEnabled CanUseEvacCondition;
 	local array<name>                   SkipExclusions;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'EvacAll');
