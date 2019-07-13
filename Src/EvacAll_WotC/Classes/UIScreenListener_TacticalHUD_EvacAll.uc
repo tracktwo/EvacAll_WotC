@@ -88,7 +88,12 @@ function BuildVisualizationForNoEvacTiles(XComGameState VisualizeGameState)
 	{
 		break;
 	}
-	`assert(NoEvacTilesState != none);
+
+	// Can't find the the evac tiles state - it was possibly destroyed
+	if (NoEvacTilesState == none)
+	{
+		return;
+	}
 
 	class 'X2Action_NoEvacTiles'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded);
 
