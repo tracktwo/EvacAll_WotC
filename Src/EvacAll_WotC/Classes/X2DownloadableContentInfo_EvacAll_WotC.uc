@@ -31,18 +31,21 @@ static event OnPostTemplatesCreated()
     local X2CharacterTemplate CharTemplate;
     local array<X2DataTemplate> DataTemplates;
     local X2DataTemplate Template, DiffTemplate;
+    local bool LoggedTemplate;
 
     CharacterTemplateManager = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();
 
     foreach CharacterTemplateManager.IterateTemplates(Template, None)
     {
+        LoggedTemplate = false;
         CharacterTemplateManager.FindDataTemplateAllDifficulties(Template.DataName, DataTemplates);
         foreach DataTemplates(DiffTemplate)
         {
             CharTemplate = X2CharacterTemplate(DiffTemplate);
             if (CharTemplate.Abilities.Find('Evac') >= 0)
             {
-                `Log("Adding EvacAll ability to template " $ CharTemplate.DataName);
+                `Log("Adding EvacAll ability to template " $ CharTemplate.DataName, !LoggedTemplate, 'EvacAll_WotC');
+                LoggedTemplate = true;
                 CharTemplate.Abilities.AddItem('EvacAll');
             }
         }
