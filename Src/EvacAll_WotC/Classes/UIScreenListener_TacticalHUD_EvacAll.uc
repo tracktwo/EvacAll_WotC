@@ -40,6 +40,13 @@ function EventListenerReturn OnEvacZonePlaced(Object EventData, Object EventSour
 	local XComWorldData WorldData;
 	
 	EvacState = XComGameState_EvacZone(EventSource);
+
+	// Ignore non-XCOM evac zones, e.g. ADVENT zones in the Neutralize Field Commander missions.
+	if (EvacState.Team != eTeam_XCom)
+	{
+		return ELR_NoInterrupt;
+	}
+
 	WorldData = `XWORLD;
 	class'XComGameState_EvacZone'.static.GetEvacMinMax(EvacState.CenterLocation, Min, Max);
 

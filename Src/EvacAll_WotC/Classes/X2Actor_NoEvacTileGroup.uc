@@ -54,7 +54,7 @@ function DestroyTileActors()
 		NoEvacActor.Destroy();
 	}
 
-	NoEvacTiles.Length = 0;	
+	NoEvacTiles.Length = 0;
 }
 
 // Evac zone has been destroyed! Destroy all our blocked tile actors and return.

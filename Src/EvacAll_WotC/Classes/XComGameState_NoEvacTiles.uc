@@ -33,16 +33,16 @@ static function XComGameState_NoEvacTiles CreateNoEvacTilesState(XComGameState N
 	{
 		// Don't already have one. Make a new one.
 		NoEvacTilesState = XComGameState_NoEvacTiles(NewGameState.CreateStateObject(class'XComGameState_NoEvacTiles'));
+		NewGameState.AddStateObject(NoEvacTilesState);
 	}
 	else
 	{
 		// We already had one, we're going to be updating the existing one.
-		NoEvacTilesState = XComGameState_NoEvacTiles(NewGameState.CreateStateObject(NoEvacTilesState.Class, NoEvacTilesState.ObjectID));
+		NoEvacTilesState = XComGameState_NoEvacTiles(NewGameState.ModifyStateObject(NoEvacTilesState.Class, NoEvacTilesState.ObjectID));
 	}
 
 	NoEvacTilesState.NoEvacTiles = BlockedTiles;
 	NoEvacTilesState.FindOrCreateVisualizer();
-	NewGameState.AddStateObject(NoEvacTilesState);
 
 	return NoEvacTilesState;
 }
@@ -52,14 +52,11 @@ function Actor FindOrCreateVisualizer(optional XComGameState GameState = none)
 	local X2Actor_NoEvacTileGroup NoEvacTilesActor;
 
 	NoEvacTilesActor = X2Actor_NoEvacTileGroup(GetVisualizer());
-	
-	if (NoEvacTilesActor != none)
+	if (NoEvacTilesActor == none)
 	{
-		NoEvacTilesActor.Destroy();
+		NoEvacTilesActor = `BATTLE.Spawn(class'X2Actor_NoEvacTileGroup');
+		`XCOMHISTORY.SetVisualizer(ObjectID, NoEvacTilesActor);
 	}
-
-	NoEvacTilesActor = `BATTLE.Spawn(class'X2Actor_NoEvacTileGroup');
-	`XCOMHISTORY.SetVisualizer(ObjectID, NoEvacTilesActor);
 
 	return NoEvacTilesActor;
 }
